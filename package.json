@@ -1,0 +1,7 @@
+{
+  "name": "MT_ChessEngines",
+  "version": "1.0.0",
+  "dependencies": {
+    "chessops": "^0.13.0"
+  }
+}
