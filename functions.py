@@ -312,9 +312,9 @@ def get_opp(df,type):
                 ev1s.append(data['evaluation pos1'])
                 ev2s.append(data['evaluation pos2'])
         elif type==4:
-            if data['evaluation pos1'].get('Mate') != None:
-                if data['evaluation pos2'].get('Mate') != None:
-                    if data['evaluation pos1'].get('Mate')*data['evaluation pos2'].get('Mate') < 0:
+            if data['evaluation pos1'][0].get('Mate') != None:
+                if data['evaluation pos2'][0].get('Mate') != None:
+                    if data['evaluation pos1'][0].get('Mate')*data['evaluation pos2'][0].get('Mate') < 0:
                         indexy.append(index)
                         index += 1
                         pos1s.append(data['pos1'])
@@ -322,16 +322,16 @@ def get_opp(df,type):
                         ev1s.append(data['evaluation pos1'])
                         ev2s.append(data['evaluation pos2'])
                 else:
-                    if data['evaluation pos1'].get('Mate') * data['evaluation pos2'].get('Centipawn') < 0:
+                    if data['evaluation pos1'][0].get('Mate') * data['evaluation pos2'][0].get('Centipawn') < 0:
                         indexy.append(index)
                         index += 1
                         pos1s.append(data['pos1'])
                         pos2s.append(data['pos2'])
-                        ev1s.append(data['evaluation pos1'])
-                        ev2s.append(data['evaluation pos2'])
+                        ev1s.append(data['evaluation pos1'][0])
+                        ev2s.append(data['evaluation pos2'][0])
             else:
-                if data['evaluation pos2'].get('Mate') != None:
-                    if data['evaluation pos1'].get('Centipawn')*data['evaluation pos2'].get('Mate') < 0:
+                if data['evaluation pos2'][0].get('Mate') != None:
+                    if data['evaluation pos1'][0].get('Centipawn')*data['evaluation pos2'][0].get('Mate') < 0:
                         indexy.append(index)
                         index += 1
                         pos1s.append(data['pos1'])
@@ -339,7 +339,7 @@ def get_opp(df,type):
                         ev1s.append(data['evaluation pos1'])
                         ev2s.append(data['evaluation pos2'])
                 else:
-                    if data['evaluation pos1'].get('Centipawn') * data['evaluation pos2'].get('Centipawn') < 0:
+                    if data['evaluation pos1'][0].get('Centipawn') * data['evaluation pos2'][0].get('Centipawn') < 0:
                         indexy.append(index)
                         index += 1
                         pos1s.append(data['pos1'])
