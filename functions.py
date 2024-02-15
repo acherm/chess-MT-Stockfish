@@ -80,7 +80,22 @@ def split_mate_cp(evaluations):
     index_cp = 0
     index_mate = 0
     for index, eva in evaluations.iterrows():
-        if eva['evaluation pos1'].get('type')=='mate' or eva['evaluation pos2'].get('type')=='mate':
+        if isinstance(eva['evaluation pos1'], list):
+            if eva['evaluation pos1'][0].get('Mate')!=None or eva['evaluation pos2'][0].get('type')!=None:
+                indexy_mate.append(index_mate)
+                index_mate+=1
+                pos1s_mate.append(eva['pos1'])
+                pos2s_mate.append(eva['pos2'])
+                ev1s_mate.append(eva['evaluation pos1'])
+                ev2s_mate.append(eva['evaluation pos2'])
+            else:
+                indexy_cp.append(index_mate)
+                index_cp += 1
+                pos1s_cp.append(eva['pos1'])
+                pos2s_cp.append(eva['pos2'])
+                ev1s_cp.append(eva['evaluation pos1'])
+                ev2s_cp.append(eva['evaluation pos2'])
+        elif eva['evaluation pos1'].get('type')=='mate' or eva['evaluation pos2'].get('type')=='mate':
             indexy_mate.append(index_mate)
             index_mate+=1
             pos1s_mate.append(eva['pos1'])
@@ -235,10 +250,10 @@ def plotevas(data1, data2, val, type):
         for data in data2:
             ind2 += 1
             if data.get('Mate') == None:
-                cp1.append(ind1)
+                cp2.append(ind2)
                 values2cp.append(data.get('Centipawn'))
             else:
-                mate1.append(ind1)
+                mate2.append(ind2)
                 values2mate.append(data.get('Mate'))
     else:
         for data in data1:
@@ -267,18 +282,21 @@ def plotevas(data1, data2, val, type):
                     mate2.append(ind2)
                     values2mate.append(data.get('value'))
 
-    plt.plot(cp1, values1cp, color='#17d1d3')
-    plt.plot(cp2, values2cp, color='#405ee3', linestyle='dashed')
 
-    plt.ylabel('Centipawn difference', color='blue')
+    plt.plot(cp1, values1cp, '-', color='#17d1d3')
+    plt.plot(cp2, values2cp, '--', color='#405ee3')
+
+    plt.grid(axis='y', color='#D3D3D3', linestyle='-', linewidth=0.5)
+
+    plt.ylabel('Centipawn advantage', color='blue')
     plt.tick_params('y', colors='blue')
 
     plt.twinx()
 
-    plt.plot(mate1, values1mate, color='#f7766d')
-    plt.plot(mate2, values2mate, color='#df2c1f', linestyle='dashed')
+    plt.plot(mate1, values1mate, '-', color='#f7766d')
+    plt.plot(mate2, values2mate, '--', color='#df2c1f')
 
-    plt.ylabel('Mate difference', color='red')
+    plt.ylabel('Mate in', color='red')
     plt.tick_params('y', colors='red')
 
     plt.show()
@@ -286,14 +304,28 @@ def plotevas(data1, data2, val, type):
 
 def sorted_gaps(evas,type, delta, epsilon,mate):
     if mate:
-        temp = sort_df((getFalses(evas, type, delta, epsilon)))
+        temp = sort_df((getFalses(evas, type, delta, epsilon)),True)
     else:
         temp = sort_df(split_mate_cp(getFalses(evas, type, delta, epsilon))[0])
     temp.reset_index(drop=True, inplace=True)
     return temp
 
-def sort_df(df):
-    return (df.iloc[df['evaluation pos1'].apply(lambda x: abs(x['value'])).argsort()])
+def sort_df(df,mate=False):
+    if isinstance(df['evaluation pos1'][0],list) and not mate:
+        df = df[df['evaluation pos1'].apply(lambda x: abs(x[0]['Centipawn']) is not None)]
+        df['Centipawn'] = df['evaluation pos1'].apply(lambda x: abs(x[0]['Centipawn']))
+        df = df.sort_values(by='Centipawn', ascending=True)
+        df = df.reset_index(drop=True)
+        df = df.drop(columns=['Centipawn'])
+        return df
+    elif isinstance(df['evaluation pos1'][0],list) and mate:
+        df = df[df['evaluation pos1'].apply(lambda x: x[0]['Mate'] is not None)]
+        df['Mate'] = df['evaluation pos1'].apply(lambda x: abs(x[0]['Mate']))
+        df = df.sort_values(by='Mate', ascending=False)
+        df = df.reset_index(drop=True)
+        df = df.drop(columns=['Mate'])
+        return df
+    return df.iloc[df['evaluation pos1'].apply(lambda x: abs(x['value'])).argsort()]
 
 def get_opp(df,type):
     pos1s = []
