@@ -16,7 +16,7 @@ def check_and_kill_stockfish(interval_minutes, threshold_cpu_time):
                     # Tuer le processus s'il a utilisé plus de temps CPU que le seuil
                     psutil.Process(process.info['pid']).terminate()
                     nb+=1
-                    playsound('oyasumi.mp3')
+                    #playsound('oyasumi.mp3')
                     print('𐐘💥╾━╤デ╦︻ඞා ', nb)
 
         # Attendre X minutes avant de vérifier à nouveau

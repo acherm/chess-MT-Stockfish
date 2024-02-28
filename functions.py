@@ -23,7 +23,10 @@ def generate_random_key(length=10):
 emplacement_actuel = os.getcwd()
 print(emplacement_actuel)
 
-with open('valid_positions.txt') as f:
+nament = 'lichess1500-2000-10.txt'
+chemin = os.path.join('pgns', nament)
+
+with open(chemin) as f:
     pos = f.readlines()
 pos1 = []
 for i in range(len(pos)):
@@ -1078,7 +1081,7 @@ epsilons = [0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100]
 
 
 depth = 20
-type = 4
+type = 1
 elo = 50000
 
 print('amogus')
@@ -1089,24 +1092,24 @@ print('amogus')
 # 3 : better,
 # 4 : first
 
-#
-# evaluations = main2(len(dataset), 8, elo, depth, type)
-# tests(evaluations, type, depth)
+
+evaluations = main2(1000, 8, elo, depth, type)
+tests(evaluations, type, depth)
 
 typent = ["sim_mirror", "sim_axis", "sim_diag", "replace", "best_move"][type]
-name = "evaluations" + str(elo) +'_'+ typent + '_d_' + str(depth) + ".pkl"
+name = "ev_"  + nament.removesuffix('.txt') + '_'+ typent + '_d_' + str(depth) + ".pkl"
 
-subfolder = typent + "_d=" + str(depth)
-# if not os.path.exists(subfolder):
-#     os.makedirs(subfolder)
+subfolder = "reals"
+if not os.path.exists(subfolder):
+     os.makedirs(subfolder)
 
 chemin = os.path.join(subfolder, name)
 
-# with open(chemin, 'wb') as fichier:
-#     pickle.dump(evaluations, fichier)
+with open(chemin, 'wb') as fichier:
+    pickle.dump(evaluations, fichier)
 
-with open(chemin, 'rb') as fichier:
-     evaluations_chargees = pickle.load(fichier)
+# with open(chemin, 'rb') as fichier:
+#     evaluations_chargees = pickle.load(fichier)
 
 
 
