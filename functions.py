@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from timeit import default_timer as timer
 import random
 import string
-
+import chess
 
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -23,10 +23,11 @@ def generate_random_key(length=10):
 emplacement_actuel = os.getcwd()
 print(emplacement_actuel)
 
-nament = 'lichess1500-2000-10.txt'
-chemin = os.path.join('pgns', nament)
+#load du dataset
 
-with open(chemin) as f:
+nament = 'valid_positions.txt'
+chemin = os.path.join('pgns',nament)
+with open(nament) as f:
     pos = f.readlines()
 pos1 = []
 for i in range(len(pos)):
@@ -46,10 +47,9 @@ dataset = pos1
 #     wh.append(pos1[i] + ' w')
 # dataset = bl + wh
 
-
-
+#fonction d'évaluation de stockfish
 def evaluation(pos, elo, depth):
-    stockfish = Stockfish('C:/Users/axel/Git/MT_ChessEngines/stockfish_15_x64_avx2.exe')
+    stockfish = Stockfish('C:/Users/axel/Git/Chessrepro/stockfish-windows-x86-64-avx2.exe')
     stockfish.set_elo_rating(elo)
     stockfish.set_depth(depth)
     stockfish.set_fen_position(pos)
@@ -58,9 +58,9 @@ def evaluation(pos, elo, depth):
 
     return ev, pos
 
-
+# double évaluation, pratique pour comparer
 def evaluationdouble(pos1, pos2, elo, depth):
-    stockfish = Stockfish('C:/Users/axel/Git/MT_ChessEngines/stockfish_15_x64_avx2.exe')
+    stockfish = Stockfish('C:/Users/axel/Git/Chessrepro/stockfish_15_x64_avx2.exe')
     stockfish.set_elo_rating(elo)
     stockfish.set_depth(depth)
     stockfish.set_fen_position(pos1)
@@ -69,6 +69,7 @@ def evaluationdouble(pos1, pos2, elo, depth):
     ev2 = stockfish.get_evaluation()
     return ev1, ev2
 
+#split les évaluation avec des mats et celles avec des centipawns seulement
 def split_mate_cp(evaluations):
     pos1s_mate = []
     pos2s_mate = []
@@ -152,8 +153,8 @@ def analyse_fen(pos,d):
         evas.append(evaluation(pos,50000,d)[0])
     return evas
 
-
-def saveevas(pos1, pos2, min_d, max_d, type, delta, epsilon,name):
+#save un .pkl avec le résultat de l'évaluation de stockfish en fonction de la profondeur
+def saveevas(pos1, pos2, min_d, max_d, type, delta, epsilon,name=None, save=False):
     d = 1
     data1 = []
     data2 = []
@@ -219,15 +220,49 @@ def saveevas(pos1, pos2, min_d, max_d, type, delta, epsilon,name):
             if MR_first(e1, e2, delta, epsilon):
                 val.append(d)
     print('MR verified at depth = ', val)
-    typent = ["sim_mirror", "sim_axis", "sim_diag", "replace", "best_move"][type]
-    name = name+".pkl"
 
-    subfolder = 'plotevas'
+    if save:
+        typent = ["sim_mirror", "sim_axis", "sim_diag", "replace", "best_move"][type]
+        name = name+".pkl"
+
+        subfolder = 'plotevas'
+        chemin = os.path.join(subfolder, name)
+        with open(chemin, 'wb') as fichier:
+            pickle.dump((data1,data2,val), fichier)
+    else:
+        return (data1,data2,val)
+
+#save plusieurs courbes
+def savemultiplesevas(dataset, type, min_d, max_d, delta, epsilon, name):
+    def process_data(k):
+        pos1 = dataset[k]
+        if type == 0:
+            pos2 = sim_mirror(dataset[k])
+        elif type == 1 or type == 3:
+            pos2 = sim_axis(dataset[k])
+        elif type == 2:
+            pos2 = sim_diag(dataset[k])
+        else:
+            return 0
+        result = saveevas(pos1, pos2, min_d, max_d, type, delta, epsilon)
+        print(f"Processed element {k+1}/{len(dataset)}")
+        return result
+
+    results = []
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(process_data, k) for k in range(len(dataset))]
+        for future in futures:
+            results.append(future.result())
+    name = name + ".pkl"
+    subfolder = 'massplotevas'
+    if not os.path.exists(subfolder):
+        os.makedirs(subfolder)
     chemin = os.path.join(subfolder, name)
     with open(chemin, 'wb') as fichier:
-        pickle.dump((data1,data2,val), fichier)
+        pickle.dump(results, fichier)
+    return results
 
-
+# pour plot
 def plotevas(data1, data2, val, type):
     print('MR verified at depth = ', val)
     ind1 = 0
@@ -304,7 +339,7 @@ def plotevas(data1, data2, val, type):
 
     plt.show()
 
-
+# sort les gaps des MR qui ont foirées, avec les mats ou non
 def sorted_gaps(evas,type, delta, epsilon,mate):
     if mate:
         temp = sort_df((getFalses(evas, type, delta, epsilon)),True)
@@ -949,7 +984,78 @@ def tests(evas, type, d):
 
     plt.savefig(chemin)
 
+def oppo(evas,type):
+    pos1s = evas["pos1"]
+    pos2s = evas["pos2"]
+    ev1s = evas["evaluation pos1"]
+    ev2s = evas["evaluation pos2"]
+    pos1soppo = []
+    pos2soppo = []
+    ev1soppo = []
+    ev2soppo = []
+    indexyoppo = []
+    index = 0
+    if type == 0:
+        for k in range(len(ev1s)):
+            #print(ev1s[k].get('value'),ev2s[k].get('value'))
+            if ev1s[k].get('value')*ev2s[k].get('value')>0:
+                indexyoppo.append(index)
+                index += 1
+                pos1soppo.append(pos1s[k])
+                pos2soppo.append(pos2s[k])
+                ev1soppo.append(ev1s[k])
+                ev2soppo.append(ev2s[k])
+    if type == 1 or type == 2:
+        for k in range(len(ev1s)):
+            if ev1s[k].get('value')*ev2s[k].get('value')<0:
+                indexyoppo.append(index)
+                index += 1
+                pos1soppo.append(pos1s[k])
+                pos2soppo.append(pos2s[k])
+                ev1soppo.append(ev1s[k])
+                ev2soppo.append(ev2s[k])
+    if type == 3:
+        print('not relevant')
+    if type == 4:
+        for k in range(len(ev1s)):
+            if ev1s[k].get('Mate')!=None and ev2s[k].get('Mate')!=None:
+                if ev1s[k].get('Mate')*ev2s[k].get('Mate')<0:
+                    indexyoppo.append(index)
+                    index += 1
+                    pos1soppo.append(pos1s[k])
+                    pos2soppo.append(pos2s[k])
+                    ev1soppo.append(ev1s[k])
+                    ev2soppo.append(ev2s[k])
+            elif ev1s[k].get('Mate')==None and ev2s[k].get('Mate')!=None:
+                if ev1s[k].get('Centipawn') * ev2s[k].get('Mate') < 0:
+                    indexyoppo.append(index)
+                    index += 1
+                    pos1soppo.append(pos1s[k])
+                    pos2soppo.append(pos2s[k])
+                    ev1soppo.append(ev1s[k])
+                    ev2soppo.append(ev2s[k])
+            elif ev1s[k].get('Mate')!=None and ev2s[k].get('Mate')==None:
+                if ev1s[k].get('Mate') * ev2s[k].get('Centipawn') < 0:
+                    indexyoppo.append(index)
+                    index += 1
+                    pos1soppo.append(pos1s[k])
+                    pos2soppo.append(pos2s[k])
+                    ev1soppo.append(ev1s[k])
+                    ev2soppo.append(ev2s[k])
+            elif ev1s[k].get('Mate')==None and ev2s[k].get('Mate')==None:
+                if ev1s[k].get('Centipawn')*ev2s[k].get('Centipawn')<0:
+                    indexyoppo.append(index)
+                    index += 1
+                    pos1soppo.append(pos1s[k])
+                    pos2soppo.append(pos2s[k])
+                    ev1soppo.append(ev1s[k])
+                    ev2soppo.append(ev2s[k])
+    d = {'index': indexyoppo, 'pos1': pos1soppo, 'evaluation pos1': ev1soppo,
+        'pos2': pos2soppo, 'evaluation pos2': ev2soppo}
+    oppos = pd.DataFrame(data=d)
+    return oppos
 
+# recupérer les evaluations qui violent les MRs
 def getFalses(evas, type, delta, epsilon):
     pos1s = evas["pos1"]
     pos2s = evas["pos2"]
@@ -1045,6 +1151,10 @@ def process_data(start_index, end_index, elo, depth, type):
 
 def main2(size, threads, elo, depth, type):
     start = timer()
+    global threadsfinis
+    global threadstotaux
+    threadsfinis = 0
+    threadstotaux = threads
     chunk_size = size // threads
     num_chunks = threads
 
@@ -1080,12 +1190,12 @@ epsilons = [0, 5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 100]
 
 
 
-depth = 20
+depth = 10
 type = 1
 elo = 50000
-
-print('amogus')
-# types:
+#
+# print('amogus')
+# # types:
 # 0 : mirror,
 # 1 : sim_axis,
 # 2 : sim_diag,
@@ -1093,13 +1203,13 @@ print('amogus')
 # 4 : first
 
 
-evaluations = main2(1000, 8, elo, depth, type)
+evaluations = main2(len(dataset), 8, elo, depth, type)
 tests(evaluations, type, depth)
 
 typent = ["sim_mirror", "sim_axis", "sim_diag", "replace", "best_move"][type]
-name = "ev_"  + nament.removesuffix('.txt') + '_'+ typent + '_d_' + str(depth) + ".pkl"
+name = "ev_"  + nament.removesuffix('.txt')+ typent + '_d_' + str(depth) + ".pkl"
 
-subfolder = "reals"
+subfolder = "v16"
 if not os.path.exists(subfolder):
      os.makedirs(subfolder)
 
@@ -1108,8 +1218,8 @@ chemin = os.path.join(subfolder, name)
 with open(chemin, 'wb') as fichier:
     pickle.dump(evaluations, fichier)
 
-# with open(chemin, 'rb') as fichier:
-#     evaluations_chargees = pickle.load(fichier)
+# # with open(chemin, 'rb') as fichier:
+# #     evaluations_chargees = pickle.load(fichier)
 
 
 
