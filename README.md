@@ -3,7 +3,7 @@
 Our work reproduced the original study "Metamorphic Testing of Chess Engines" published at [IST journal](https://www.sciencedirect.com/science/article/pii/S0950584923001179).
 We also replicated it while varying three factors, namely: 1) the depth value; 2) the dataset through the inclusion of realistic positions; and 3) the version of Stockfish.
 We found that the metamorphic relations are not as effective as in the original article, especially on realistic chess positions and increase of depth (original depth=10 was too low).
-We raise awareness of the sensitivity of depth: metamorphic relations may only be violated at specific depths, and there is a depth threshold beyond which the testing method becomes ineffective.
+We raise awareness of the sensitivity of depth: metamorphic relations may only be violated at specific depths, and there is a depth threshold beyond which the testing method becomes ineffective for the studied metamorphic relations.
 Through a rigorous and in-depth analysis of the source code, we found  why Stockfish can exhibit discrepancies on transformed positions and why at certain low depths, metamorphic relations are not effective.
 Our overall conclusion is that it is not a bug, but a feature of the exploration process of modern chess engines.
 
@@ -13,6 +13,33 @@ Our overall conclusion is that it is not a bug, but a feature of the exploration
  * scripts used to analyze data,
  * heatmaps and results integrated in notebooks.
 
+## Background and intuition
+
+Figure shows two chess boards evaluated by Stockfish of a game by
+Magnus Carlsen grand master at depth = 20. The metamorphic relation "sim mirror" with a mirror symmetry
+is applied on the right board. One would assume a similar evaluation by
+Stockfish, but at depth = 20, the chess engine gives different results.
+Yet, Stockfish returns an evaluation of +0.66 for the first board and of -2.17 for the second board.
+It increases the advantage from slight to decisive advantage (of the previously white and now black).
+Hence, it is tempting to conclude that the metamorphic relation is violated and that Stockfish is not robust to this transformation.
+
+![Original position and symmetry mirror. Evaluation of SF15 is +0.66 and -2.17 at depth=20](running_position.png)
+
+However, looking at the evolution of the evaluation w.r.t. the depth, we observe that the evaluation of the transformed position is subtle.
+In this example, the evolution of the two lines is similar across depth, and the metamorphic relation is verified at depth 2, 3, 5, 9, 12,
+13, 14, 15, 16, 17, 18, 19, 21, 23, 25, 26, 27, 28, 29, 30 for δ = 0.25 and ε = 25 as thresholds.
+We also note that there could be stronger discrepancies, e.g., at depth=6 or at depth=20. There is some stability after depth 25 and the metamorphic relation then still holds.
+
+![Evolution of the evaluation w.r.t. depth. The dashed line corresponds to the original position, while the other one is about the transformed position.](evolution_depth_position.png)
+
+This example shows two important aspects of the metamorphic testing of chess engines.
+First, discrepancies can occur at certain specific depth (e.g., depth=20) and
+then disappear or re-appear for subsequent depths. It shows the sensitivity
+of the metamorphic testing to the depth factor. Metamorphic relation can
+be violated depending on the choice of the depth or some discrepancies can
+be ignored. Second, there exists a depth threshold, beyond which further increases in depth do not result in any violation of metamorphic relation.
+
+**Our work revisits the original study and provides a more in-depth analysis of the Stockfish source code to explain why such discrepancies can occur and why the metamorphic relations are not as effective as in the original article especially on realistic chess positions and increase of depth (original depth=10 was too low).**
 
 ## Notebook and analysis scripts
 
