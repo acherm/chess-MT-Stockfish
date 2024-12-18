@@ -47,12 +47,12 @@ See `data-notebook-results/reevaluating-SF-MT.ipynb` for the analysis and result
 There are several sections and subsections in the Notebook, and the overall organization is as follows:
  * utility fucntions for importing data and to transform positions
  * results with Stockfish 15 at depth=10, depth=15, and depth=20 on `mirror, sim_axis, sim_diag, better, first` transformations, using original dataset as well as our dataset (based on Lichess)
-  - results of Section 4 can be traced back here (depth=10)
-  - results of Section 5.1 and 5.2 can be traced back here
+   - results of Section 4 can be traced back here (depth=10)
+   - results of Section 5.1 and 5.2 can be traced back here
  * analysis on biggest gaps using larger depth (eg depth=30)
  * experiments on the Carlsen-Nepo game (Stockfish 15 and 16)
  * results with Stockfish 16 at depth=10 and depth=20 on `mirror, sim_axis, sim_diag, better, first` transformationsn,  using original dataset as well as our dataset (based on Lichess)
-  - results of Section 5.3 can be traced back here
+   - results of Section 5.3 can be traced back here
 
 The notebook relies on Stockfish (you should edit the absolute path) as well as the data (see below for more information).
 A PDF of all results is also available in the `data-notebook-results` folder.
